@@ -7,6 +7,7 @@ export default async (req: any, res: any) => {
     body,
     method
   } = req
+  const sessionId = getRandomHex8()
 
   if (method !== 'POST') {
     // CORS https://vercel.com/guides/how-to-enable-cors
@@ -23,6 +24,9 @@ export default async (req: any, res: any) => {
   if (!body) return res.status(400).end(`No body provided`)
 
   if (typeof body === 'object' && !body.url) return res.status(400).end(`No url provided`)
+
+  const url = body.url
+  console.log('[debug] ', ' [sessionId]: ', sessionId, ' [url]: ', url)
 
   const isProd = process.env.NODE_ENV === 'production'
 
@@ -45,12 +49,18 @@ export default async (req: any, res: any) => {
 
   const page = await browser.newPage()
 
+  // log all console logs
+  page.on('console', msg => {
+    console.log('[debug] [sessionId=]: ', sessionId, ' [console=]: ', msg.text());
+  })
+
+  // log all request failed events
+  page.on('requestfailed', event => {
+    const req = JSON.stringify(event.failure())   
+    console.log('[debug] [sessionId=]: ', sessionId, ' [reqFailed=]: ', req);
+  })
+
   await page.setViewport({ width: 1200, height: 630 })
-
-  // const url = getAbsoluteURL(`?hash=${hash}`, path)
-  const url = body.url
-
-  console.log('url', url)
 
   await page.goto(url, {
     waitUntil: "networkidle2",
@@ -72,4 +82,11 @@ export default async (req: any, res: any) => {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   )
   res.end(data)
+}
+
+
+function getRandomHex8() {
+  return Math.floor(Math.random() * 0xffffffff)
+    .toString(16)
+    .padStart(8, '0');
 }
