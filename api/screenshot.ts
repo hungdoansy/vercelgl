@@ -34,7 +34,13 @@ export default async (req: any, res: any) => {
 
   if (isProd) {
     browser = await puppeteer.launch({
-      args: [...chrome.args, "--hide-scrollbars", "--disable-web-security"],
+      args: [
+        ...chrome.args,
+        "--hide-scrollbars",
+        "--disable-web-security",
+        "--disable-features=IsolateOrigins",
+        "--disable-site-isolation-trials"
+      ],
       defaultViewport: chrome.defaultViewport,
       executablePath: await chrome.executablePath(),
       headless: 'new',
